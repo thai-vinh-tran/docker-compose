@@ -1,0 +1,10 @@
+services:
+  jupyter:
+    image: quay.io/jupyter/datascience-notebook
+    user: root
+    volumes:
+      - .:/home/jovyan/work
+    ports:
+      - 8888:8888
+    container_name: jupyter_notebook
+    restart: always
