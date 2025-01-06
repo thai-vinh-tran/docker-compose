@@ -1,1 +1,2 @@
-**docker-compose up -d**
+**Docker compose things**
+```docker-compose up -d```
