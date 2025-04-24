@@ -5,6 +5,4 @@ services:
     restart: always
     network_mode: host  # Enables host networking
     command: tunnel run --token YOUR_TUNNEL_TOKEN
-    environment:
-      - TUNNEL_TOKEN=YOUR_TUNNEL_TOKEN
 
