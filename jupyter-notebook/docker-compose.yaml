@@ -1,7 +1,8 @@
 services:
   jupyter:
-    image: quay.io/jupyter/datascience-notebook
-    user: root
+    # image: quay.io/jupyter/datascience-notebook
+    image: vinhtranthai/jupyter-notebook-papermill
+    user: "0:0"
     volumes:
       - .:/home/jovyan/work
     ports:
