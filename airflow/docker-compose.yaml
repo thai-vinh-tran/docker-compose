@@ -233,6 +233,7 @@ services:
   jupyter:
     # image: quay.io/jupyter/datascience-notebook
     image: vinhtranthai/jupyter-notebook-papermill
+    pull_policy: always
     user: "0:0"
     volumes:
       - ./dags:/home/jovyan/dags
