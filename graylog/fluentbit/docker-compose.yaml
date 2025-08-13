@@ -1,0 +1,14 @@
+services:
+  fluentbit:
+    image: vinhtranthai/fluent-bit-cjson:latest
+    container_name: fluentbit
+    restart: always
+    environment:
+      - TZ=Asia/Ho_Chi_Minh
+    volumes:
+      - /datadrive/docker/containers:/var/lib/docker/containers:ro
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ./fluent-bit.conf:/fluent-bit/etc/fluent-bit.conf:ro
+      - ./parsers.conf:/fluent-bit/etc/parsers.conf:ro
+      - ./script.lua:/fluent-bit/etc/script.lua:ro
+      - ./docker-name-filter.lua:/fluent-bit/etc/docker-name-filter.lua
