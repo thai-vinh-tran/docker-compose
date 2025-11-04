@@ -40,7 +40,7 @@ services:
       interval: 15s
       timeout: 10s
       retries: 30          # 30 × 15s = 7.5 minutes max wait
-      start_period: 60s    # Give JVM time to boot
+      start_period: 120s    # Give JVM time to boot
     deploy:
       resources:
         limits:
