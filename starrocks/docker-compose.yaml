@@ -25,28 +25,26 @@ services:
       - ./fe/fe.conf:/etc/starrocks/fe/conf/fe.conf:ro
       - ./fe/meta:/opt/starrocks/fe/meta
       - ./fe/log:/opt/starrocks/fe/log
-    command: /opt/starrocks/fe/bin/start_fe.sh --daemon
+    command: |
+      bash -c "
+        /opt/starrocks/fe/bin/start_fe.sh --daemon
+        echo 'Waiting for FE master (max 10 min)...'
+        for i in {1..60}; do
+          if mysql -h 127.0.0.1 -P 9030 -u root -e 'SHOW FRONTENDS\G' 2>/dev/null | grep -q 'Alive: true.*IsMaster: true'; then
+            echo 'FE is ready!'
+            tail -f /opt/starrocks/fe/log/fe.log
+          fi
+          sleep 10
+        done
+        echo 'FE failed to start' && exit 1
+      "
     healthcheck:
-      test:
-        - CMD
-        - bash
-        - -c
-        - |
-          # Full path to mysql
-          /usr/bin/mysql -h 127.0.0.1 -P 9030 -u root --silent --connect-timeout=5 -e "
-            SELECT 1 FROM dual;
-            SHOW FRONTENDS\G
-          " | grep -E "(Alive: true.*IsMaster: true|1 row in set)"
-      interval: 15s
+      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-P", "9030", "--silent"]
+      interval: 30s
       timeout: 10s
-      retries: 30          # 30 × 15s = 7.5 minutes max wait
-      start_period: 120s    # Give JVM time to boot
-    deploy:
-      resources:
-        limits:
-          memory: 4G
-        reservations:
-          memory: 2G
+      retries: 3
+      start_period: 180s
+      start_interval: 5s
 
   be1:
     image: starrocks/be-ubuntu:3.3-latest
