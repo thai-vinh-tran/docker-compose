@@ -27,7 +27,7 @@ services:
       - ./fe/log:/opt/starrocks/fe/log
     command: /opt/starrocks/fe/bin/start_fe.sh --daemon
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-P", "9030", "--silent"]
+      test: ["CMD-SHELL", "curl -fsS http://127.0.0.1:8030/ || exit 1"]
       interval: 10s
       timeout: 5s
       retries: 12
