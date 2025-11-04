@@ -1,0 +1,99 @@
+services:
+  zookeeper:
+    image: zookeeper:3.8
+    container_name: zk
+    restart: unless-stopped
+    ports:
+      - "2181:2181"
+    volumes:
+      - ./zookeeper/data:/data
+    environment:
+      ZOO_MY_ID: 1
+      ZOO_SERVERS: server.1=zk:2888:3888;2181
+
+  fe:
+    image: starrocks/fe-ubuntu:3.3-latest
+    container_name: starrocks-fe
+    restart: unless-stopped
+    depends_on:
+      - zookeeper
+    ports:
+      - "8030:8030"
+      - "9020:9020"
+      - "9030:9030"
+    volumes:
+      - ./fe/fe.conf:/etc/starrocks/fe/conf/fe.conf:ro   # External config
+      - ./fe/meta:/opt/starrocks/fe/meta
+      - ./fe/log:/opt/starrocks/fe/log
+    command: /opt/starrocks/fe/bin/start_fe.sh --daemon
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-P", "9030", "--silent"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+
+  be1:
+    image: starrocks/be-ubuntu:3.3-latest
+    container_name: starrocks-be1
+    restart: unless-stopped
+    depends_on:
+      fe:
+        condition: service_healthy
+    ports:
+      - "8040:8040"
+      - "8060:8060"
+      - "9060:9060"
+    volumes:
+      - ./be1/be.conf:/etc/starrocks/be/conf/be.conf:ro   # External config
+      - ./be1/storage:/opt/starrocks/be/storage
+      - ./be1/log:/opt/starrocks/be/log
+    command: |
+      bash -c "
+        until mysql -h fe -P 9030 -u root -e 'ALTER SYSTEM ADD BACKEND \"be1:9060\"'; do
+          echo 'Waiting for FE...'
+          sleep 2
+        done
+        /opt/starrocks/be/bin/start_be.sh --daemon
+      "
+
+  be2:
+    image: starrocks/be-ubuntu:3.3-latest
+    container_name: starrocks-be2
+    restart: unless-stopped
+    depends_on:
+      fe:
+        condition: service_healthy
+    ports:
+      - "8041:8040"
+      - "8061:8060"
+      - "9061:9060"
+    volumes:
+      - ./be2/be.conf:/etc/starrocks/be/conf/be.conf:ro
+      - ./be2/storage:/opt/starrocks/be/storage
+      - ./be2/log:/opt/starrocks/be/log
+    command: |
+      bash -c "
+        until mysql -h fe -P 9030 -u root -e 'ALTER SYSTEM ADD BACKEND \"be2:9060\"'; do sleep 2; done
+        /opt/starrocks/be/bin/start_be.sh --daemon
+      "
+
+  be3:
+    image: starrocks/be-ubuntu:3.3-latest
+    container_name: starrocks-be3
+    restart: unless-stopped
+    depends_on:
+      fe:
+        condition: service_healthy
+    ports:
+      - "8042:8040"
+      - "8062:8060"
+      - "9063:9060"
+    volumes:
+      - ./be3/be.conf:/etc/starrocks/be/conf/be.conf:ro
+      - ./be3/storage:/opt/starrocks/be/storage
+      - ./be3/log:/opt/starrocks/be/log
+    command: |
+      bash -c "
+        until mysql -h fe -P 9030 -u root -e 'ALTER SYSTEM ADD BACKEND \"be3:9060\"'; do sleep 2; done
+        /opt/starrocks/be/bin/start_be.sh --daemon
+      "
