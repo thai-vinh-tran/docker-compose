@@ -1,117 +1,15 @@
 services:
-  zookeeper:
-    image: zookeeper:3.8
-    container_name: zk
-    restart: unless-stopped
+  starrocks:
+    image: starrocks/allin1-ubuntu
+    container_name: starrocks
     ports:
-      - "2181:2181"
-    volumes:
-      - ./zk/data:/data
-    environment:
-      ZOO_MY_ID: 1
-      ZOO_SERVERS: server.1=zk:2888:3888;2181
-
-  fe:
-    image: starrocks/fe-ubuntu:3.3-latest
-    container_name: starrocks-fe
-    restart: unless-stopped
-    depends_on:
-      - zookeeper
-    ports:
-      - "8030:8030"
-      - "9020:9020"
       - "9030:9030"
-    volumes:
-      - ./fe/fe.conf:/etc/starrocks/fe/conf/fe.conf:ro
-      - ./fe/meta:/opt/starrocks/fe/meta
-      - ./fe/log:/opt/starrocks/fe/log
-    # command: |
-    #   bash -c "
-    #     /opt/starrocks/fe/bin/start_fe.sh --daemon
-    #     echo 'Waiting for FE master (max 10 min)...'
-    #     for i in {1..60}; do
-    #       if mysql -h 127.0.0.1 -P 9030 -u root -e 'SHOW FRONTENDS\G' 2>/dev/null | grep -q 'Alive: true.*IsMaster: true'; then
-    #         echo 'FE is ready!'
-    #         tail -f /opt/starrocks/fe/log/fe.log
-    #       fi
-    #       sleep 10
-    #     done
-    #     echo 'FE failed to start' && exit 1
-    #   "
-    # healthcheck:
-    #   test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-P", "9030", "--silent"]
-    #   interval: 30s
-    #   timeout: 10s
-    #   retries: 3
-    #   start_period: 180s
-    #   start_interval: 5s
-
-  be1:
-    image: starrocks/be-ubuntu:3.3-latest
-    container_name: starrocks-be1
-    restart: unless-stopped
-    depends_on:
-      fe:
-        condition: service_healthy
-    ports:
+      - "8030:8030"
       - "8040:8040"
-      - "8060:8060"
-      - "9060:9060"
     volumes:
-      - ./be1/be.conf:/etc/starrocks/be/conf/be.conf:ro
-      - ./be1/storage:/opt/starrocks/be/storage
-      - ./be1/log:/opt/starrocks/be/log
-    command: |
-      bash -c "
-        echo 'Waiting for FE master...'
-        until /usr/bin/mysql -h fe -P 9030 -u root --silent -e 'SHOW FRONTENDS\G' | grep -q 'IsMaster: true'; do
-          sleep 5
-        done
-        echo 'Registering be1...'
-        /usr/bin/mysql -h fe -P 9030 -u root -e 'ALTER SYSTEM ADD BACKEND \"be1:9060\"' || true
-        /opt/starrocks/be/bin/start_be.sh --daemon
-      "
-
-  be2:
-    image: starrocks/be-ubuntu:3.3-latest
-    container_name: starrocks-be2
-    restart: unless-stopped
-    depends_on:
-      fe:
-        condition: service_healthy
-    ports:
-      - "8041:8040"
-      - "8061:8060"
-      - "9061:9060"
-    volumes:
-      - ./be2/be.conf:/etc/starrocks/be/conf/be.conf:ro
-      - ./be2/storage:/opt/starrocks/be/storage
-      - ./be2/log:/opt/starrocks/be/log
-    command: |
-      bash -c "
-        until /usr/bin/mysql -h fe -P 9030 -u root --silent -e 'SHOW FRONTENDS\G' | grep -q 'IsMaster: true'; do sleep 5; done
-        /usr/bin/mysql -h fe -P 9030 -u root -e 'ALTER SYSTEM ADD BACKEND \"be2:9060\"' || true
-        /opt/starrocks/be/bin/start_be.sh --daemon
-      "
-
-  be3:
-    image: starrocks/be-ubuntu:3.3-latest
-    container_name: starrocks-be3
-    restart: unless-stopped
-    depends_on:
-      fe:
-        condition: service_healthy
-    ports:
-      - "8042:8040"
-      - "8062:8060"
-      - "9063:9060"
-    volumes:
-      - ./be3/be.conf:/etc/starrocks/be/conf/be.conf:ro
-      - ./be3/storage:/opt/starrocks/be/storage
-      - ./be3/log:/opt/starrocks/be/log
-    command: |
-      bash -c "
-        until /usr/bin/mysql -h fe -P 9030 -u root --silent -e 'SHOW FRONTENDS\G' | grep -q 'IsMaster: true'; do sleep 5; done
-        /usr/bin/mysql -h fe -P 9030 -u root -e 'ALTER SYSTEM ADD BACKEND \"be3:9060\"' || true
-        /opt/starrocks/be/bin/start_be.sh --daemon
-      "
+      - ./starrocks/fe-meta:/opt/starrocks/fe/meta
+      - ./starrocks/fe-log:/opt/starrocks/fe/log
+      # Storage for BE
+      - ./starrocks/be-storage:/opt/starrocks/be/storage
+      - ./starrocks/be-log:/opt/starrocks/be/log
+    restart: always
