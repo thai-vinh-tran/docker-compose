@@ -1,0 +1,12 @@
+services:
+  sql2019:
+    image: mcr.microsoft.com/mssql/server:2019-latest
+    container_name: sql-ubuntu
+    environment:
+      ACCEPT_EULA: Y
+      SA_PASSWORD: ${SA_PASSWORD}
+    ports:
+      - "1433:1433"           
+    volumes:
+      - /sqlserver/data:/var/opt/mssql/data
+    restart: unless-stopped
