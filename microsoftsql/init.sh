@@ -1,5 +1,5 @@
 #!/bin/bash
-DIR ="data"
+DIR="data"
 
 if [ ! -d "$DIR" ]; then
 	mkdir "$DIR"
